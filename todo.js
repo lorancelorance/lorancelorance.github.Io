@@ -13,7 +13,7 @@ const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 let taskIdToDelete = null;
 
 // Focus on the input box on load
-inputBox.focus();
+//inputBox.focus();
 
 // Retrieve tasks from localStorage or initialize empty array
 let taskArray = JSON.parse(localStorage.getItem('tasks')) || [];
