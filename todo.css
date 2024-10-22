@@ -112,38 +112,41 @@ body {
     border-color: #1E3A8A;
 }
 
-#dailyTaskContainer, #monthlyTaskContainer {
+#dailyTaskContainer, #monthlyTaskContainer, #dayChallengeContainer {
     max-height: 400px;
     overflow-y: auto;
     padding-right: 10px;
 }
 
-#dailyTaskContainer::-webkit-scrollbar, #monthlyTaskContainer::-webkit-scrollbar {
+#dailyTaskContainer::-webkit-scrollbar, #monthlyTaskContainer::-webkit-scrollbar, #dayChallengeContainer::-webkit-scrollbar {
     width: 8px;
 }
 
-#dailyTaskContainer::-webkit-scrollbar-track, #monthlyTaskContainer::-webkit-scrollbar-track {
+#dailyTaskContainer::-webkit-scrollbar-track, #monthlyTaskContainer::-webkit-scrollbar-track, #dayChallengeContainer::-webkit-scrollbar-track {
     background: #F0F4F8; 
 }
 
-#dailyTaskContainer::-webkit-scrollbar-thumb, #monthlyTaskContainer::-webkit-scrollbar-thumb {
-    background-color: #CCCCCC; 
-    border-radius: 4px;
+#dailyTaskContainer::-webkit-scrollbar-thumb, #monthlyTaskContainer::-webkit-scrollbar-thumb, #dayChallengeContainer::-webkit-scrollbar-thumb {
+    background: #1E3A8A;
+    border-radius: 10px;
 }
 
-/* Toast Styles */
-.toast {
-    background-color: #1E3A8A;
+/* Day Challenge Styles */
+#dayChallengeContainer .list-group-item {
+    display: flex;
+    justify-content: space-between;
 }
 
-.toast.bg-success {
-    background-color: #16A34A; 
+.challenge-day-completed {
+    background-color: #D1FAE5;
+    color: #16A34A;
 }
 
-.toast.bg-danger {
-    background-color: #DC2626;
+.challenge-day-pending {
+    background-color: #F87171;
+    color: #FFFFFF;
 }
 
-.toast.bg-info {
-    background-color: #3B82F6; 
+#dayChallengeContainer::-webkit-scrollbar {
+    width: 8px;
 }
