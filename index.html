@@ -26,6 +26,9 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button" role="tab" aria-controls="monthly" aria-selected="false">Monthly Tasks</button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="challenge-tab" data-bs-toggle="tab" data-bs-target="#challenge" type="button" role="tab" aria-controls="challenge" aria-selected="false">Day Challenge</button>
+                    </li>
                 </ul>
                 <!-- Task Input Group -->
                 <div class="input-group mb-3">
@@ -44,6 +47,15 @@
                     <div class="tab-pane fade" id="monthly" role="tabpanel" aria-labelledby="monthly-tab">
                         <ul class="list-group" id="monthlyTaskContainer">
                             <!-- Monthly Tasks will be appended here -->
+                        </ul>
+                    </div>
+                    <div class="tab-pane fade" id="challenge" role="tabpanel" aria-labelledby="challenge-tab">
+                        <div class="input-group mb-3">
+                            <input type="number" class="form-control" placeholder="Enter number of days for the challenge..." id="dayInputBox" aria-label="Days">
+                            <button class="btn btn-primary" type="button" id="setChallengeBtn">Set Challenge</button>
+                        </div>
+                        <ul class="list-group" id="dayChallengeContainer">
+                            <!-- Day Challenge tasks will be appended here -->
                         </ul>
                     </div>
                 </div>
