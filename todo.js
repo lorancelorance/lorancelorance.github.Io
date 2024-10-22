@@ -1,212 +1,213 @@
-// Selecting DOM elements
-const addButton = document.getElementById('addBtn');
+// Selecting elements
+const taskTabs = document.getElementById('taskTabs');
 const inputBox = document.getElementById('inputBox');
+const addBtn = document.getElementById('addBtn');
 const dailyTaskContainer = document.getElementById('dailyTaskContainer');
 const monthlyTaskContainer = document.getElementById('monthlyTaskContainer');
-const toastEl = document.getElementById('notificationToast');
+const notificationToast = new bootstrap.Toast(document.getElementById('notificationToast'));
 const toastMessage = document.getElementById('toastMessage');
-const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-
-// For Delete Confirmation
 const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
 const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-let taskIdToDelete = null;
 
-// Focus on the input box on load
-//inputBox.focus();
-
-// Retrieve tasks from localStorage or initialize empty array
+// Day Challenge Variables
+const dayInputBox = document.getElementById('dayInputBox');
+const setChallengeBtn = document.getElementById('setChallengeBtn');
+const dayChallengeContainer = document.getElementById('dayChallengeContainer');
 let taskArray = JSON.parse(localStorage.getItem('tasks')) || [];
+let challengeDaysArray = JSON.parse(localStorage.getItem('challengeDays')) || [];
+let challengeStartTime = JSON.parse(localStorage.getItem('challengeStartTime')) || null;
+let deleteTaskId = null;
 
-// Flags to prevent multiple alerts for each category
-let allCompletedAlertShown = {
-    daily: false,
-    monthly: false
-};
+// Helper function to show alert message (toast)
+function showAlert(message, type = 'primary') {
+    toastMessage.textContent = message;
+    document.getElementById('notificationToast').className = `toast align-items-center text-white bg-${type} border-0`;
+    notificationToast.show();
+}
 
-// Save tasks to localStorage
+// Function to get current category
+function getCurrentCategory() {
+    const activeTab = taskTabs.querySelector('.nav-link.active').getAttribute('aria-controls');
+    return activeTab === 'daily' ? 'daily' : 'monthly';
+}
+
+// Function to add a task
+function addTask() {
+    const taskText = inputBox.value.trim();
+    const category = getCurrentCategory();
+
+    if (taskText === '') {
+        showAlert('Please enter a task.', 'danger');
+        return;
+    }
+
+    const newTask = {
+        id: Date.now(),
+        text: taskText,
+        isCompleted: false,
+        category: category
+    };
+
+    taskArray.push(newTask);
+    setItems();
+    getAllTasks();
+    showAlert('Task added successfully!', 'primary');
+
+    if (category === 'daily') {
+        updateDayStatus();  // Update day status on task completion
+    }
+
+    inputBox.value = '';
+    inputBox.focus();
+}
+
+// Function to save tasks to localStorage
 function setItems() {
     localStorage.setItem('tasks', JSON.stringify(taskArray));
 }
 
-// Create a task element
-function createTaskElement(taskObj) {
-    const li = document.createElement('li');
-    li.className = `list-group-item task-item ${taskObj.isCompleted ? 'completed' : ''}`;
-    li.setAttribute('data-id', taskObj.id);
-
-    const span = document.createElement('span');
-    span.className = 'task-text';
-    span.textContent = taskObj.task;
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
-
-    li.appendChild(span);
-    li.appendChild(deleteBtn);
-
-    // Append to the appropriate task container based on category
-    if (taskObj.category === 'daily') {
-        dailyTaskContainer.appendChild(li);
-    } else if (taskObj.category === 'monthly') {
-        monthlyTaskContainer.appendChild(li);
-    }
-}
-
-// Get all tasks and render them in their respective containers
+// Function to retrieve and display all tasks
 function getAllTasks() {
-    dailyTaskContainer.innerHTML = '';
-    monthlyTaskContainer.innerHTML = '';
-    taskArray.forEach(task => {
-        createTaskElement(task);
+    const dailyTasks = taskArray.filter(task => task.category === 'daily');
+    const monthlyTasks = taskArray.filter(task => task.category === 'monthly');
+
+    renderTasks(dailyTasks, dailyTaskContainer);
+    renderTasks(monthlyTasks, monthlyTaskContainer);
+}
+
+// Function to render tasks
+function renderTasks(tasks, container) {
+    container.innerHTML = '';
+
+    tasks.forEach(task => {
+        const li = document.createElement('li');
+        li.className = `list-group-item ${task.isCompleted ? 'completed' : ''}`;
+        li.innerHTML = `
+            <span class="task-text" data-id="${task.id}">${task.text}</span>
+            <button class="delete-btn" data-id="${task.id}">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+
+        li.querySelector('.task-text').addEventListener('click', toggleTaskCompletion);
+        li.querySelector('.delete-btn').addEventListener('click', confirmDelete);
+
+        container.appendChild(li);
     });
 }
 
-// Add Task
-function addTask() {
-    const userInput = inputBox.value.trim();
-    if (userInput.length === 0) {
-        showAlert('Please enter a valid task.', 'danger');
-        return;
-    }
+// Function to toggle task completion
+function toggleTaskCompletion() {
+    const taskId = parseInt(this.getAttribute('data-id'));
+    const task = taskArray.find(t => t.id === taskId);
 
-    const taskId = Date.now().toString();
-    const category = getCurrentCategory(); // Determine the current category
-    const taskObj = {
-        task: userInput,
-        isCompleted: false,
-        id: taskId,
-        category: category
-    };
-
-    taskArray.push(taskObj);
-    setItems();
-    createTaskElement(taskObj);
-    inputBox.value = '';
-    inputBox.focus();
-
-    showAlert('Task added successfully!', 'success');
-    allCompletedAlertShown[category] = false; // Reset the alert flag for the category
-}
-
-// Show Toast Alert
-function showAlert(message, type) {
-    toastMessage.textContent = message;
-    toastEl.classList.remove('bg-primary', 'bg-success', 'bg-danger', 'bg-warning', 'bg-info');
-    toastEl.classList.add(`bg-${type}`);
-    toast.show();
-}
-
-// Get the currently active category based on the active tab
-function getCurrentCategory() {
-    const dailyTab = document.getElementById('daily-tab');
-    const monthlyTab = document.getElementById('monthly-tab');
-    return dailyTab.classList.contains('active') ? 'daily' : 'monthly';
-}
-
-// Check if all tasks in the current category are completed
-function checkAllCompleted() {
-    const currentCategory = getCurrentCategory();
-    const tasksInCategory = taskArray.filter(task => task.category === currentCategory);
-    if (tasksInCategory.length === 0) return; // No tasks to check
-    const allCompleted = tasksInCategory.every(task => task.isCompleted);
-    if (allCompleted && !allCompletedAlertShown[currentCategory]) {
-        showAlert('You have successfully completed your ' + (currentCategory === 'daily' ? 'daily' : 'monthly') + ' tasks. All the best!', 'success');
-        allCompletedAlertShown[currentCategory] = true;
-
-        // Reset all tasks to not completed after the toast is shown
-        // Use Bootstrap's toast hidden event to ensure the reset happens after the toast disappears
-        toastEl.addEventListener('hidden.bs.toast', () => resetAllTasks(currentCategory), { once: true });
-    }
-}
-
-// Reset all tasks in a specific category to not completed
-function resetAllTasks(category) {
-    // Reset all tasks in the specified category
-    taskArray = taskArray.map(task => {
-        if (task.category === category) {
-            return { ...task, isCompleted: false };
-        }
-        return task;
-    });
+    task.isCompleted = !task.isCompleted;
     setItems();
     getAllTasks();
-
-    showAlert('All ' + (category === 'daily' ? 'daily' : 'monthly') + ' tasks have been reset. Keep up the good work!', 'info');
+    updateDayStatus();
 }
 
-// Toggle Task Completion
-function toggleTaskCompletion(id) {
-    taskArray = taskArray.map(task => {
-        if (task.id === id) {
-            return { ...task, isCompleted: !task.isCompleted };
-        }
-        return task;
-    });
-    setItems();
-    getAllTasks();
-    checkAllCompleted(); // Check after toggling
-}
-
-// Remove Task with Confirmation Modal
-function removeTask(id) {
-    taskIdToDelete = id;
+// Function to confirm delete task
+function confirmDelete() {
+    deleteTaskId = parseInt(this.getAttribute('data-id'));
     deleteConfirmModal.show();
 }
 
-// Confirm Deletion
-confirmDeleteBtn.addEventListener('click', () => {
-    if (taskIdToDelete) {
-        taskArray = taskArray.filter(task => task.id !== taskIdToDelete);
-        setItems();
-        getAllTasks();
-        showAlert('Task deleted successfully!', 'success');
-        taskIdToDelete = null;
-        deleteConfirmModal.hide();
-        checkAllCompleted(); 
-    }
-});
+// Function to delete a task
+function deleteTask() {
+    taskArray = taskArray.filter(task => task.id !== deleteTaskId);
+    setItems();
+    getAllTasks();
+    deleteConfirmModal.hide();
+    showAlert('Task deleted successfully.', 'danger');
+}
 
-// Add Task Event Listeners
-addButton.addEventListener('click', addTask);
+// Event listener for confirming delete task
+confirmDeleteBtn.addEventListener('click', deleteTask);
 
-inputBox.addEventListener('keyup', (e) => {
+// Event listener for adding a task
+addBtn.addEventListener('click', addTask);
+inputBox.addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         addTask();
     }
 });
 
-dailyTaskContainer.addEventListener('click', (e) => {
-    handleTaskClick(e, 'daily');
-});
+// Day Challenge - Set challenge
+setChallengeBtn.addEventListener('click', setChallenge);
 
-monthlyTaskContainer.addEventListener('click', (e) => {
-    handleTaskClick(e, 'monthly');
-});
-
-// Handle task click events
-function handleTaskClick(e, category) {
-    const parentLi = e.target.closest('li');
-    if (!parentLi) return;
-    const taskId = parentLi.getAttribute('data-id');
-
-    // If delete button is clicked
-    if (e.target.closest('.delete-btn')) {
-        removeTask(taskId);
+// Set Challenge
+function setChallenge() {
+    const days = parseInt(dayInputBox.value.trim());
+    if (isNaN(days) || days <= 0) {
+        showAlert('Please enter a valid number of days.', 'danger');
+        return;
     }
-    // If task text is clicked
-    else if (e.target.classList.contains('task-text') || e.target.classList.contains('task-item')) {
-        toggleTaskCompletion(taskId);
+
+    challengeDaysArray = Array.from({ length: days }, (_, index) => ({
+        day: index + 1,
+        isCompleted: false,
+        completedAt: null,
+    }));
+
+    challengeStartTime = Date.now();
+    localStorage.setItem('challengeStartTime', JSON.stringify(challengeStartTime));
+    setChallengeItems();
+}
+
+// Render challenge days in the UI
+function renderChallengeDays() {
+    dayChallengeContainer.innerHTML = '';
+
+    challengeDaysArray.forEach(day => {
+        const li = document.createElement('li');
+        li.className = `list-group-item ${day.isCompleted ? 'challenge-day-completed' : 'challenge-day-pending'}`;
+        li.textContent = `Day ${day.day} - ${day.isCompleted ? 'Completed' : 'Pending'}`;
+        dayChallengeContainer.appendChild(li);
+    });
+}
+
+// Store challenge data
+function setChallengeItems() {
+    localStorage.setItem('challengeDays', JSON.stringify(challengeDaysArray));
+    renderChallengeDays();
+}
+
+// Check for daily task completion when tasks are updated
+function updateDayStatus() {
+    const dailyTasksCompleted = taskArray.filter(task => task.category === 'daily').every(task => task.isCompleted);
+
+    if (dailyTasksCompleted) {
+        const currentDayIndex = challengeDaysArray.findIndex(day => !day.isCompleted);
+        if (currentDayIndex !== -1) {
+            challengeDaysArray[currentDayIndex].isCompleted = true;
+            challengeDaysArray[currentDayIndex].completedAt = Date.now(); // Store completion time
+            setChallengeItems();
+            showAlert(`Day ${currentDayIndex + 1} completed successfully!`, 'success');
+        }
+
+        // Reset all daily tasks
+        taskArray = taskArray.map(task => ({ ...task, isCompleted: false }));
+        setItems();
+        getAllTasks();
+        checkAllCompleted();
+    }
+}
+
+// Reset challenge if not completed within 24 hours
+function resetChallengeIfExpired() {
+    const now = Date.now();
+    if (challengeStartTime && (now - challengeStartTime) > (24 * 60 * 60 * 1000)) {
+        // Reset all days to incomplete if 24 hours passed
+        challengeDaysArray = challengeDaysArray.map(day => ({ ...day, isCompleted: false }));
+        challengeStartTime = null;
+        localStorage.removeItem('challengeStartTime');
+        setChallengeItems();
+        showAlert('Day Challenge reset due to time expiration.', 'danger');
     }
 }
 
 // Initial Render
 getAllTasks();
-checkAllCompleted(); // Check on initial load
-
-// Listen for tab change to update focus or other behaviors if needed
-const taskTabs = document.getElementById('taskTabs');
-taskTabs.addEventListener('shown.bs.tab', () => {
-    inputBox.focus();
-});
+renderChallengeDays();
+resetChallengeIfExpired();
